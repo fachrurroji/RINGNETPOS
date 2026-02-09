@@ -10,6 +10,7 @@ import {
     Package,
     Wrench,
     Building2,
+    CreditCard,
     LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
@@ -21,6 +22,7 @@ const menuItems = [
     { href: '/master/branches', label: 'Cabang', icon: Building2 },
     { href: '/master/products', label: 'Produk', icon: Package },
     { href: '/master/mechanics', label: 'Mekanik', icon: Wrench },
+    { href: '/settings/billing', label: 'Billing', icon: CreditCard },
 ];
 
 export function Sidebar() {
