@@ -213,4 +213,44 @@ export class ReportsService {
             })),
         };
     }
+
+    // Low stock products
+    async getLowStock(tenantId: string, branchId?: string) {
+        // Get all products with inventory
+        const products = await this.prisma.product.findMany({
+            where: {
+                tenantId,
+                type: 'GOODS', // Only check stock for physical goods
+            },
+            include: {
+                inventory: {
+                    where: branchId ? { branchId } : undefined,
+                },
+            },
+        });
+
+        const lowStockItems = products
+            .map((product) => {
+                const totalStock = product.inventory.reduce(
+                    (sum, inv) => sum + inv.qty,
+                    0,
+                );
+                return {
+                    id: product.id,
+                    sku: product.sku,
+                    name: product.name,
+                    minStock: product.minStock,
+                    currentStock: totalStock,
+                    deficit: product.minStock - totalStock,
+                };
+            })
+            .filter((item) => item.currentStock < item.minStock)
+            .sort((a, b) => b.deficit - a.deficit);
+
+        return {
+            count: lowStockItems.length,
+            items: lowStockItems,
+        };
+    }
 }
+

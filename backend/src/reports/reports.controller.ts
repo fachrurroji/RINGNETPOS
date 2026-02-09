@@ -87,4 +87,16 @@ export class ReportsController {
     async getVehicleHistory(@Param('plate') plate: string, @Request() req) {
         return this.reportsService.getVehicleHistory(req.user.tenantId, plate);
     }
+
+    @Get('low-stock')
+    @Roles(UserRole.OWNER, UserRole.MANAGER)
+    @ApiOperation({ summary: 'Get low stock products' })
+    @ApiQuery({ name: 'branchId', required: false })
+    async getLowStock(
+        @Request() req,
+        @Query('branchId') branchId?: string,
+    ) {
+        return this.reportsService.getLowStock(req.user.tenantId, branchId);
+    }
 }
+

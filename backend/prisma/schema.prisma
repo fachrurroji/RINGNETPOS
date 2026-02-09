@@ -106,6 +106,7 @@ model Product {
   basePrice          Decimal     @map("base_price") @db.Decimal(15, 2)
   sellPrice          Decimal?    @map("sell_price") @db.Decimal(15, 2)
   isFlexiblePrice    Boolean     @default(false) @map("is_flexible_price")
+  minStock           Int         @default(5) @map("min_stock")
   imageUrl           String?     @map("image_url")
   createdAt          DateTime    @default(now()) @map("created_at")
 

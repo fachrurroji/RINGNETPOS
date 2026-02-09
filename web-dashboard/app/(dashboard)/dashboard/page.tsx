@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { reportsApi, transactionsApi } from '@/lib/api';
+import { reportsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { TrendingUp, Users, Package, Wallet } from 'lucide-react';
+import { TrendingUp, Users, Package, Wallet, AlertTriangle } from 'lucide-react';
 
 interface DailyReport {
     date: string;
@@ -14,17 +14,31 @@ interface DailyReport {
     netRevenue: number;
 }
 
+interface LowStockItem {
+    id: string;
+    sku: string;
+    name: string;
+    minStock: number;
+    currentStock: number;
+    deficit: number;
+}
+
 export default function DashboardPage() {
     const [report, setReport] = useState<DailyReport | null>(null);
+    const [lowStock, setLowStock] = useState<{ count: number; items: LowStockItem[] }>({ count: 0, items: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const { data } = await reportsApi.getDaily();
-                setReport(data);
+                const [dailyRes, lowStockRes] = await Promise.all([
+                    reportsApi.getDaily(),
+                    reportsApi.getLowStock(),
+                ]);
+                setReport(dailyRes.data);
+                setLowStock(lowStockRes.data);
             } catch (error) {
-                console.error('Failed to fetch report:', error);
+                console.error('Failed to fetch data:', error);
             } finally {
                 setLoading(false);
             }
@@ -73,6 +87,30 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
                 <p className="text-gray-500">Selamat datang di Ring Pro Dashboard</p>
             </div>
+
+            {/* Low Stock Alert */}
+            {lowStock.count > 0 && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-4">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                        <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="font-semibold text-red-800">
+                            ⚠️ {lowStock.count} Produk Stok Menipis
+                        </h3>
+                        <p className="text-sm text-red-600 mt-1">
+                            {lowStock.items.slice(0, 3).map(item => item.name).join(', ')}
+                            {lowStock.count > 3 && ` dan ${lowStock.count - 3} lainnya`}
+                        </p>
+                        <a
+                            href="/reports/low-stock"
+                            className="text-sm text-red-700 font-medium hover:underline mt-2 inline-block"
+                        >
+                            Lihat Detail →
+                        </a>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, index) => (
@@ -151,11 +189,16 @@ export default function DashboardPage() {
                                 <p className="text-sm font-medium mt-2">Produk</p>
                             </a>
                             <a
-                                href="/master/mechanics"
-                                className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                                href="/reports/low-stock"
+                                className={`p-4 rounded-lg transition-colors text-center ${lowStock.count > 0
+                                        ? 'bg-red-50 hover:bg-red-100'
+                                        : 'bg-gray-50 hover:bg-gray-100'
+                                    }`}
                             >
-                                <span className="text-2xl">🔧</span>
-                                <p className="text-sm font-medium mt-2">Mekanik</p>
+                                <span className="text-2xl">⚠️</span>
+                                <p className="text-sm font-medium mt-2">
+                                    Stok Menipis {lowStock.count > 0 && `(${lowStock.count})`}
+                                </p>
                             </a>
                         </div>
                     </CardContent>

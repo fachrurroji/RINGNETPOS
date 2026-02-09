@@ -49,6 +49,8 @@ export const reportsApi = {
         api.get('/reports/top-products', { params: { month, branchId, limit } }),
     getVehicleHistory: (plate: string) =>
         api.get(`/reports/vehicle-history/${plate}`),
+    getLowStock: (branchId?: string) =>
+        api.get('/reports/low-stock', { params: { branchId } }),
 };
 
 // Master Data API
