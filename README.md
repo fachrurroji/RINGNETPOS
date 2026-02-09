@@ -1,19 +1,21 @@
-# 🔧 RingPOS - SaaS POS Bengkel & Retail
+# 🔧 Ring Pro — Mechanic Edition
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-In%20Development-yellow)](/)
+[![Status](https://img.shields.io/badge/status-Phase%201%20Complete-green)](/)
+[![NestJS](https://img.shields.io/badge/backend-NestJS-red)](https://nestjs.com/)
+[![Flutter](https://img.shields.io/badge/mobile-Flutter-blue)](https://flutter.dev/)
 
 ## 📋 Deskripsi
 
-**RingPOS** adalah platform Point of Sale (POS) berbasis SaaS untuk manajemen bengkel dan retail multi-cabang. Sistem ini dirancang **Full Online** dengan arsitektur cloud-native untuk menjamin integritas data dan kecepatan tinggi.
+**Ring Pro (Mechanic Edition)** adalah platform Point of Sale (POS) berbasis SaaS untuk manajemen bengkel motor/mobil multi-cabang. Sistem dirancang **Full Online** dengan arsitektur cloud-native untuk menjamin integritas data dan kecepatan tinggi.
 
 ### ✨ Keunggulan Utama
 
-- 📱 **Mobile First** - Gunakan HP/Tablet sebagai alat kasir
-- 🏪 **Multi-Cabang** - Pantau semua cabang dalam satu dashboard
-- ⚡ **Super Cepat** - Scan barcode < 100ms dengan Redis caching
-- 🔒 **Anti-Curang** - Stok dan kasir saling mengunci
-- 🧾 **Struk Digital** - Cetak atau kirim via WhatsApp
+- 📱 **Mobile First** — Gunakan HP/Tablet sebagai alat kasir
+- 🏪 **Multi-Cabang** — Pantau semua cabang dalam satu dashboard
+- ⚡ **Super Cepat** — Scan barcode < 100ms dengan Redis caching
+- 🔧 **Mechanic Friendly** — Input harga jasa & komisi mekanik fleksibel
+- 🧾 **Struk Digital** — Cetak atau kirim via WhatsApp
 
 ## 🎯 Target Pengguna
 
@@ -24,7 +26,7 @@
 | **Manager** | Kepala Cabang |
 | **Cashier** | Staf Kasir |
 
-> **Note:** Mekanik tidak memiliki akun. Kasir berkomunikasi langsung secara lisan.
+> **Note:** Mekanik tidak memiliki akun — hanya dicatat sebagai data master untuk komisi.
 
 ## 🛠️ Tech Stack
 
@@ -32,54 +34,82 @@
 |-------|-----------|
 | **Mobile App** | Flutter |
 | **Web Dashboard** | Next.js (React) |
-| **Backend API** | NestJS (Node.js) |
+| **Backend API** | NestJS (Node.js + TypeScript) |
 | **Database** | PostgreSQL 16 |
+| **ORM** | Prisma |
 | **Caching** | Redis |
-| **Cloud** | GCP/AWS (Jakarta Region) |
+| **Auth** | JWT + Passport |
 
 ## 📁 Struktur Project
 
 ```
 ringnetpos/
 ├── backend/          # NestJS API Server
+│   ├── src/
+│   │   ├── auth/         # JWT Auth & Guards
+│   │   ├── tenants/      # Multi-tenant CRUD
+│   │   ├── users/        # User management
+│   │   ├── branches/     # Branch management
+│   │   ├── products/     # Product & SKU scan
+│   │   └── prisma/       # Prisma service
+│   └── prisma/
+│       ├── schema.prisma # Database schema
+│       └── seed.ts       # Demo data seeder
 ├── mobile/           # Flutter App (Android/iOS)
 ├── web-dashboard/    # Next.js Owner Dashboard
-├── docs/             # Dokumentasi
 └── shared/           # Shared types & constants
 ```
 
 ## 🚀 Quick Start
 
-### Backend
+### 1. Start Database (Docker)
+```bash
+docker compose up -d
+```
+
+### 2. Backend Setup
 ```bash
 cd backend
-cp .env.example .env
-docker-compose up -d
 npm install
+npx prisma db push
+npx ts-node prisma/seed.ts
 npm run start:dev
 ```
 
-### Mobile
-```bash
-cd mobile
-flutter pub get
-flutter run
-```
+### 3. Access API
+- **API Base URL:** http://localhost:3000/api
+- **Swagger Docs:** http://localhost:3000/api/docs
 
-### Web Dashboard
-```bash
-cd web-dashboard
-npm install
-npm run dev
-```
+## 🔐 Test Credentials
 
-## 📖 Dokumentasi
+| Role | Username | Password |
+|------|----------|----------|
+| Superadmin | `superadmin` | `SuperAdmin123!` |
+| Owner | `owner_demo` | `Owner123!` |
+| Cashier | `cashier_demo` | `Cashier123!` |
 
-- [Implementation Plan](./implementation_plan.md) - Detail teknis & roadmap
+## 📡 API Endpoints
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `POST` | `/api/auth/login` | User login | Public |
+| `GET` | `/api/tenants` | List tenants | Superadmin |
+| `GET` | `/api/users` | List users | Owner+ |
+| `GET` | `/api/branches` | List branches | All roles |
+| `GET` | `/api/products` | List products | All roles |
+| `GET` | `/api/products/scan/:sku` | Barcode scan | All roles |
+
+## 📖 Development Phases
+
+- [x] **Phase 1:** Foundation (Auth, CRUD Master Data)
+- [ ] **Phase 2:** Core POS & Redis Integration
+- [ ] **Phase 3:** Mechanic & Commission System
+- [ ] **Phase 4:** Web Dashboard & Reporting
+- [ ] **Phase 5:** SaaS Billing & Launch
 
 ## 📄 License
 
-MIT License - Lihat [LICENSE](LICENSE) untuk detail.
+MIT License — Lihat [LICENSE](LICENSE) untuk detail.
 
 ---
 
