@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPERADMIN
+  OWNER
+  MANAGER
+  CASHIER
+}
+
+enum ProductType {
+  GOODS
+  SERVICE
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+// 1. TENANTS (Penyewa SaaS)
+model Tenant {
+  id               String    @id @default(uuid())
+  businessName     String    @map("business_name")
+  subscriptionPlan String    @map("subscription_plan") // 'LITE', 'PRO', 'ENTERPRISE'
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  users            User[]
+  products         Product[]
+  inventory        Inventory[]
+  transactions     TransactionHeader[]
+  mechanics        Mechanic[]
+
+  @@map("tenants")
+}
+
+// 2. USERS (Tanpa Mekanik)
+model User {
+  id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
+  branchId     String?   @map("branch_id")
+  username     String
+  passwordHash String    @map("password_hash")
+  role         UserRole
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@map("users")
+}
+
+// 2b. MECHANICS (Data Master)
+model Mechanic {
+  id                 String    @id @default(uuid())
+  tenantId           String    @map("tenant_id")
+  branchId           String?   @map("branch_id")
+  name               String
+  phone              String?
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  
+  tenant             Tenant    @relation(fields: [tenantId], references: [id])
+  transactionDetails TransactionDetail[]
+
+  @@map("mechanics")
+}
+
+// 3. PRODUCTS (Barang & Jasa)
+model Product {
+  id                 String      @id @default(uuid())
+  tenantId           String      @map("tenant_id")
+  sku                String
+  name               String
+  type               ProductType
+  basePrice          Decimal     @map("base_price") @db.Decimal(15, 2)
+  sellPrice          Decimal?    @map("sell_price") @db.Decimal(15, 2)
+  isFlexiblePrice    Boolean     @default(false) @map("is_flexible_price")
+  imageUrl           String?     @map("image_url")
+  createdAt          DateTime    @default(now()) @map("created_at")
+
+  tenant             Tenant      @relation(fields: [tenantId], references: [id])
+  inventory          Inventory[]
+  transactionDetails TransactionDetail[]
+
+  @@index([tenantId, sku])
+  @@map("products")
+}
+
+// 4. INVENTORY (Stok per Cabang)
+model Inventory {
+  id            String  @id @default(uuid())
+  tenantId      String  @map("tenant_id")
+  branchId      String  @map("branch_id")
+  productId     String  @map("product_id")
+  qty           Int     @default(0)
+  minStockAlert Int     @default(5) @map("min_stock_alert")
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id])
+  product       Product @relation(fields: [productId], references: [id])
+
+  @@map("inventory")
+}
+
+// 5. TRANSACTIONS (Header)
+model TransactionHeader {
+  id            String            @id @default(uuid())
+  tenantId      String            @map("tenant_id")
+  branchId      String            @map("branch_id")
+  customerPlate String?           @map("customer_plate")
+  totalAmount   Decimal           @map("total_amount") @db.Decimal(15, 2)
+  status        TransactionStatus
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  tenant        Tenant            @relation(fields: [tenantId], references: [id])
+  details       TransactionDetail[]
+
+  @@map("transaction_headers")
+}
+
+// 6. TRANSACTION DETAILS
+model TransactionDetail {
+  id            String   @id @default(uuid())
+  transactionId String   @map("transaction_id")
+  productId     String   @map("product_id")
+  mechanicId    String?  @map("mechanic_id")
+  qty           Int
+  priceAtMoment Decimal  @map("price_at_moment") @db.Decimal(15, 2)
+  mechanicFee   Decimal? @map("mechanic_fee") @db.Decimal(15, 2)
+  subtotal      Decimal  @db.Decimal(15, 2)
+
+  transaction   TransactionHeader @relation(fields: [transactionId], references: [id])
+  product       Product           @relation(fields: [productId], references: [id])
+  mechanic      Mechanic?         @relation(fields: [mechanicId], references: [id])
+
+  @@map("transaction_details")
+}
