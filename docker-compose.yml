@@ -5,46 +5,97 @@ services:
     image: postgres:16-alpine
     container_name: ringnetpos_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USER:-ringnetpos}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-RingNet2026Secure!}
       POSTGRES_DB: ${DB_NAME:-ringnetpos}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ringnetpos_postgres_data:/var/lib/postgresql/data
     networks:
       - ringnetpos_net
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-ringnetpos}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
     container_name: ringnetpos_redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data:/data
+      - ringnetpos_redis_data:/data
     networks:
       - ringnetpos_net
     restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Optional: PgAdmin for database management
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: ringnetpos_pgadmin
-    ports:
-      - "5050:80"
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ringnetpos_backend
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-1d}
     networks:
       - ringnetpos_net
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  dashboard:
+    build:
+      context: ./web-dashboard
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://dev.ringpro.webguard.id}
+    container_name: ringnetpos_dashboard
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://dev.ringpro.webguard.id}
+    networks:
+      - ringnetpos_net
+    depends_on:
+      - backend
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: ringnetpos_nginx
+    ports:
+      - "8090:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - ringnetpos_net
+    depends_on:
+      - backend
+      - dashboard
+    restart: always
 
 networks:
   ringnetpos_net:
     driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
+  ringnetpos_postgres_data:
+  ringnetpos_redis_data:
