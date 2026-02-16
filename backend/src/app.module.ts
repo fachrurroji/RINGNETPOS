@@ -13,6 +13,9 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { MechanicsModule } from './mechanics/mechanics.module';
 import { ReportsModule } from './reports/reports.module';
+import { StockTransferModule } from './stock-transfer/stock-transfer.module';
+import { ReturnsModule } from './returns/returns.module';
+import { DraftTransactionsModule } from './draft-transactions/draft-transactions.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { ReportsModule } from './reports/reports.module';
     InventoryModule,
     MechanicsModule,
     ReportsModule,
+    StockTransferModule,
+    ReturnsModule,
+    DraftTransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

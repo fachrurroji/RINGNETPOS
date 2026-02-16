@@ -23,14 +23,14 @@ export class ProductsController {
     }
 
     @Get()
-    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Get all products for current tenant' })
     findAll(@Request() req) {
         return this.productsService.findAll(req.user.tenantId);
     }
 
     @Get('search')
-    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Search products by name or SKU' })
     @ApiQuery({ name: 'q', required: true })
     search(@Query('q') query: string, @Request() req) {
@@ -38,14 +38,14 @@ export class ProductsController {
     }
 
     @Get('scan/:sku')
-    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Scan product by SKU/barcode (high speed)' })
     findBySku(@Param('sku') sku: string, @Request() req) {
         return this.productsService.findBySku(sku, req.user.tenantId);
     }
 
     @Get(':id')
-    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Get a product by ID' })
     findOne(@Param('id') id: string, @Request() req) {
         return this.productsService.findOne(id, req.user.tenantId);

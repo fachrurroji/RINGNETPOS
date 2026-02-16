@@ -15,14 +15,14 @@ export class InventoryController {
     constructor(private readonly inventoryService: InventoryService) { }
 
     @Post()
-    @Roles(UserRole.OWNER, UserRole.MANAGER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Initialize inventory for a product at a branch' })
     create(@Body() createInventoryDto: CreateInventoryDto, @Request() req) {
         return this.inventoryService.create(req.user.tenantId, createInventoryDto);
     }
 
     @Get()
-    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'List inventory' })
     @ApiQuery({ name: 'branchId', required: false })
     findAll(@Request() req, @Query('branchId') branchId?: string) {
@@ -31,7 +31,7 @@ export class InventoryController {
     }
 
     @Get('low-stock')
-    @Roles(UserRole.OWNER, UserRole.MANAGER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Get low stock items' })
     @ApiQuery({ name: 'branchId', required: false })
     findLowStock(@Request() req, @Query('branchId') branchId?: string) {
@@ -39,7 +39,7 @@ export class InventoryController {
     }
 
     @Patch(':id')
-    @Roles(UserRole.OWNER, UserRole.MANAGER)
+    @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.WAREHOUSE)
     @ApiOperation({ summary: 'Adjust stock manually' })
     adjust(@Param('id') id: string, @Body() adjustDto: AdjustInventoryDto, @Request() req) {
         return this.inventoryService.adjust(id, req.user.tenantId, adjustDto);

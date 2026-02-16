@@ -1,9 +1,12 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { reportsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { TrendingUp, ShoppingCart, Users, Wallet } from 'lucide-react';
 
 interface DailyReport {
     date: string;
@@ -34,120 +37,97 @@ export default function DailyReportPage() {
         fetchData();
     }, [date]);
 
+    const summaryCards = [
+        { title: 'Omzet', value: formatCurrency(data?.totalRevenue || 0), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+        { title: 'Transaksi', value: String(data?.totalTransactions || 0), icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+        { title: 'Fee Mekanik', value: formatCurrency(data?.totalMechanicFee || 0), icon: Users, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+        { title: 'Laba Bersih', value: formatCurrency(data?.netRevenue || 0), icon: Wallet, color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
+    ];
+
     return (
         <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Laporan Harian</h1>
-                <p className="text-gray-500">Detail omzet dan transaksi per hari</p>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-900">Laporan Harian</h1>
+                <p className="text-slate-500 text-sm mt-1">Detail omzet dan transaksi per hari</p>
             </div>
 
-            {/* Filter */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tanggal
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
                 <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 />
             </div>
 
             {loading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="w-8 h-8 border-[3px] border-slate-200 border-t-blue-600 rounded-full animate-spin" />
                 </div>
             ) : (
                 <>
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                        <Card>
-                            <CardContent className="text-center py-4">
-                                <p className="text-sm text-gray-500">Omzet</p>
-                                <p className="text-2xl font-bold text-blue-600">
-                                    {formatCurrency(data?.totalRevenue || 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="text-center py-4">
-                                <p className="text-sm text-gray-500">Transaksi</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                    {data?.totalTransactions || 0}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="text-center py-4">
-                                <p className="text-sm text-gray-500">Fee Mekanik</p>
-                                <p className="text-2xl font-bold text-orange-600">
-                                    {formatCurrency(data?.totalMechanicFee || 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="text-center py-4">
-                                <p className="text-sm text-gray-500">Laba Bersih</p>
-                                <p className="text-2xl font-bold text-purple-600">
-                                    {formatCurrency(data?.netRevenue || 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        {summaryCards.map((card, i) => (
+                            <Card key={i} className={`border ${card.border}`}>
+                                <CardContent className="flex items-center gap-4 py-4">
+                                    <div className={`p-2.5 rounded-xl ${card.bg}`}>
+                                        <card.icon className={`w-5 h-5 ${card.color}`} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 font-medium">{card.title}</p>
+                                        <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
 
-                    {/* Transactions Table */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Daftar Transaksi</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {data?.transactions.length === 0 ? (
-                                <p className="text-gray-500 text-center py-8">
+                            {!data?.transactions || data.transactions.length === 0 ? (
+                                <p className="text-slate-400 text-center py-12 text-sm">
                                     Tidak ada transaksi pada tanggal ini
                                 </p>
                             ) : (
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b">
-                                            <th className="text-left py-3 text-sm font-medium text-gray-500">
-                                                ID
-                                            </th>
-                                            <th className="text-left py-3 text-sm font-medium text-gray-500">
-                                                Cabang
-                                            </th>
-                                            <th className="text-left py-3 text-sm font-medium text-gray-500">
-                                                Plat
-                                            </th>
-                                            <th className="text-right py-3 text-sm font-medium text-gray-500">
-                                                Total
-                                            </th>
-                                            <th className="text-center py-3 text-sm font-medium text-gray-500">
-                                                Status
-                                            </th>
+                                        <tr>
+                                            <th className="text-left">ID</th>
+                                            <th className="text-left">Cabang</th>
+                                            <th className="text-left">Plat</th>
+                                            <th className="text-right">Total</th>
+                                            <th className="text-center">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data?.transactions.map((t) => (
-                                            <tr key={t.id} className="border-b">
-                                                <td className="py-3 font-mono text-sm">
-                                                    {t.id.slice(0, 8)}...
+                                        {data.transactions.map((t: any) => (
+                                            <tr key={t.id}>
+                                                <td>
+                                                    <Link
+                                                        href={`/transactions/${t.id}`}
+                                                        className="font-mono text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                                                    >
+                                                        {t.id.slice(0, 8)}...
+                                                    </Link>
                                                 </td>
-                                                <td className="py-3">{t.branch?.name || '-'}</td>
-                                                <td className="py-3">{t.customerPlate || '-'}</td>
-                                                <td className="py-3 text-right font-medium">
+
+                                                <td className="text-slate-600">{t.branch?.name || '-'}</td>
+                                                <td className="text-slate-600">{t.customerPlate || '-'}</td>
+                                                <td className="text-right font-semibold text-slate-800">
                                                     {formatCurrency(t.totalAmount)}
                                                 </td>
-                                                <td className="py-3 text-center">
-                                                    <span
-                                                        className={`px-2 py-1 text-xs rounded-full ${t.status === 'PAID'
-                                                                ? 'bg-green-100 text-green-700'
-                                                                : t.status === 'CANCELLED'
-                                                                    ? 'bg-red-100 text-red-700'
-                                                                    : 'bg-yellow-100 text-yellow-700'
-                                                            }`}
-                                                    >
-                                                        {t.status}
+                                                <td className="text-center">
+                                                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${t.status === 'PAID'
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : t.status === 'CANCELLED'
+                                                            ? 'bg-red-50 text-red-700 border border-red-200'
+                                                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                        }`}>
+                                                        {t.status === 'PAID' ? 'Lunas' : t.status === 'CANCELLED' ? 'Batal' : 'Pending'}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -158,7 +138,8 @@ export default function DailyReportPage() {
                         </CardContent>
                     </Card>
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }

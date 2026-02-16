@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { reportsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { TrendingUp, Users, Package, Wallet, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Users, Package, Wallet, AlertTriangle, ArrowUpRight, FileText, Wrench } from 'lucide-react';
+import Link from 'next/link';
 
 interface DailyReport {
     date: string;
@@ -49,7 +50,7 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="w-8 h-8 border-[3px] border-slate-200 border-t-blue-600 rounded-full animate-spin" />
             </div>
         );
     }
@@ -59,101 +60,121 @@ export default function DashboardPage() {
             title: 'Omzet Hari Ini',
             value: formatCurrency(report?.totalRevenue || 0),
             icon: TrendingUp,
-            color: 'bg-blue-500',
+            gradient: 'from-blue-600 to-blue-700',
+            shadow: 'shadow-blue-600/25',
+            iconBg: 'bg-blue-500/30',
         },
         {
-            title: 'Transaksi',
-            value: report?.totalTransactions || 0,
+            title: 'Total Transaksi',
+            value: String(report?.totalTransactions || 0),
             icon: Package,
-            color: 'bg-green-500',
+            gradient: 'from-emerald-600 to-emerald-700',
+            shadow: 'shadow-emerald-600/25',
+            iconBg: 'bg-emerald-500/30',
         },
         {
             title: 'Fee Mekanik',
             value: formatCurrency(report?.totalMechanicFee || 0),
             icon: Users,
-            color: 'bg-orange-500',
+            gradient: 'from-amber-500 to-orange-600',
+            shadow: 'shadow-orange-600/25',
+            iconBg: 'bg-amber-400/30',
         },
         {
             title: 'Laba Bersih',
             value: formatCurrency(report?.netRevenue || 0),
             icon: Wallet,
-            color: 'bg-purple-500',
+            gradient: 'from-violet-600 to-purple-700',
+            shadow: 'shadow-violet-600/25',
+            iconBg: 'bg-violet-500/30',
         },
+    ];
+
+    const quickActions = [
+        { href: '/reports/daily', label: 'Laporan Harian', icon: FileText, emoji: '📈' },
+        { href: '/reports/commission', label: 'Komisi Mekanik', icon: Users, emoji: '💰' },
+        { href: '/master/products', label: 'Produk', icon: Package, emoji: '📦' },
+        { href: '/master/mechanics', label: 'Mekanik', icon: Wrench, emoji: '🔧' },
     ];
 
     return (
         <div>
+            {/* Header */}
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-500">Selamat datang di Ring Pro Dashboard</p>
+                <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                <p className="text-slate-500 text-sm mt-1">Selamat datang di Ring Pro Dashboard</p>
             </div>
 
             {/* Low Stock Alert */}
             {lowStock.count > 0 && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-4">
-                    <div className="p-2 bg-red-100 rounded-lg">
-                        <AlertTriangle className="w-6 h-6 text-red-600" />
+                    <div className="p-2.5 bg-red-100 rounded-xl flex-shrink-0">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="font-semibold text-red-800">
-                            ⚠️ {lowStock.count} Produk Stok Menipis
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-red-800 text-sm">
+                            {lowStock.count} Produk Stok Menipis
                         </h3>
-                        <p className="text-sm text-red-600 mt-1">
+                        <p className="text-xs text-red-600 mt-0.5">
                             {lowStock.items.slice(0, 3).map(item => item.name).join(', ')}
                             {lowStock.count > 3 && ` dan ${lowStock.count - 3} lainnya`}
                         </p>
-                        <a
+                        <Link
                             href="/reports/low-stock"
-                            className="text-sm text-red-700 font-medium hover:underline mt-2 inline-block"
+                            className="text-xs text-red-700 font-semibold hover:underline mt-2 inline-flex items-center gap-1"
                         >
-                            Lihat Detail →
-                        </a>
+                            Lihat Detail <ArrowUpRight className="w-3 h-3" />
+                        </Link>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 {stats.map((stat, index) => (
-                    <Card key={index}>
-                        <CardContent className="flex items-center gap-4">
-                            <div className={`p-3 rounded-lg ${stat.color}`}>
-                                <stat.icon className="w-6 h-6 text-white" />
+                    <div
+                        key={index}
+                        className={`bg-gradient-to-br ${stat.gradient} rounded-xl p-5 text-white shadow-lg ${stat.shadow} transition-transform hover:scale-[1.02]`}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-white/80 text-xs font-medium uppercase tracking-wider">{stat.title}</p>
+                            <div className={`${stat.iconBg} p-2 rounded-lg`}>
+                                <stat.icon className="w-4 h-4 text-white" />
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-500">{stat.title}</p>
-                                <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                    </div>
                 ))}
             </div>
 
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Today Stats */}
                 <Card>
                     <CardHeader>
                         <CardTitle>📊 Statistik Hari Ini</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex justify-between py-2 border-b">
-                                <span className="text-gray-500">Tanggal</span>
-                                <span className="font-medium">{report?.date}</span>
+                        <div className="space-y-0">
+                            <div className="flex justify-between py-3 border-b border-slate-50">
+                                <span className="text-sm text-slate-500">Tanggal</span>
+                                <span className="text-sm font-medium text-slate-800">{report?.date || '-'}</span>
                             </div>
-                            <div className="flex justify-between py-2 border-b">
-                                <span className="text-gray-500">Total Omzet</span>
-                                <span className="font-medium text-blue-600">
+                            <div className="flex justify-between py-3 border-b border-slate-50">
+                                <span className="text-sm text-slate-500">Total Omzet</span>
+                                <span className="text-sm font-semibold text-blue-600">
                                     {formatCurrency(report?.totalRevenue || 0)}
                                 </span>
                             </div>
-                            <div className="flex justify-between py-2 border-b">
-                                <span className="text-gray-500">Fee Mekanik</span>
-                                <span className="font-medium text-orange-600">
+                            <div className="flex justify-between py-3 border-b border-slate-50">
+                                <span className="text-sm text-slate-500">Fee Mekanik</span>
+                                <span className="text-sm font-semibold text-orange-600">
                                     {formatCurrency(report?.totalMechanicFee || 0)}
                                 </span>
                             </div>
-                            <div className="flex justify-between py-2">
-                                <span className="text-gray-500">Laba Bersih</span>
-                                <span className="font-bold text-green-600">
+                            <div className="flex justify-between py-3">
+                                <span className="text-sm text-slate-500">Laba Bersih</span>
+                                <span className="text-sm font-bold text-emerald-600">
                                     {formatCurrency(report?.netRevenue || 0)}
                                 </span>
                             </div>
@@ -161,45 +182,25 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
+                {/* Quick Actions */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>🚀 Quick Actions</CardTitle>
+                        <CardTitle>🚀 Akses Cepat</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-3">
-                            <a
-                                href="/reports/daily"
-                                className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            >
-                                <span className="text-2xl">📈</span>
-                                <p className="text-sm font-medium mt-2">Laporan Harian</p>
-                            </a>
-                            <a
-                                href="/reports/commission"
-                                className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            >
-                                <span className="text-2xl">💰</span>
-                                <p className="text-sm font-medium mt-2">Komisi Mekanik</p>
-                            </a>
-                            <a
-                                href="/master/products"
-                                className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            >
-                                <span className="text-2xl">📦</span>
-                                <p className="text-sm font-medium mt-2">Produk</p>
-                            </a>
-                            <a
-                                href="/reports/low-stock"
-                                className={`p-4 rounded-lg transition-colors text-center ${lowStock.count > 0
-                                        ? 'bg-red-50 hover:bg-red-100'
-                                        : 'bg-gray-50 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span className="text-2xl">⚠️</span>
-                                <p className="text-sm font-medium mt-2">
-                                    Stok Menipis {lowStock.count > 0 && `(${lowStock.count})`}
-                                </p>
-                            </a>
+                            {quickActions.map((action) => (
+                                <Link
+                                    key={action.href}
+                                    href={action.href}
+                                    className="group p-4 bg-slate-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all text-center"
+                                >
+                                    <span className="text-2xl block mb-2">{action.emoji}</span>
+                                    <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-700">
+                                        {action.label}
+                                    </p>
+                                </Link>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>

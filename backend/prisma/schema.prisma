@@ -12,6 +12,7 @@ enum UserRole {
   OWNER
   MANAGER
   CASHIER
+  WAREHOUSE
 }
 
 enum ProductType {
@@ -23,6 +24,13 @@ enum TransactionStatus {
   PENDING
   PAID
   CANCELLED
+}
+
+enum ReturnReason {
+  CUSTOMER_REQUEST
+  DEFECTIVE
+  WRONG_ITEM
+  OTHER
 }
 
 // 1. TENANTS (Penyewa SaaS)
@@ -39,6 +47,8 @@ model Tenant {
   inventory        Inventory[]
   transactions     TransactionHeader[]
   mechanics        Mechanic[]
+  stockTransfers   StockTransfer[]
+  draftTransactions DraftTransaction[]
 
   @@map("tenants")
 }
@@ -53,11 +63,14 @@ model Branch {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  users     User[]
-  mechanics Mechanic[]
-  inventory Inventory[]
-  transactions TransactionHeader[]
+  tenant        Tenant            @relation(fields: [tenantId], references: [id])
+  users         User[]
+  mechanics     Mechanic[]
+  inventory     Inventory[]
+  transactions  TransactionHeader[]
+  transfersFrom StockTransfer[]   @relation("TransfersFrom")
+  transfersTo   StockTransfer[]   @relation("TransfersTo")
+  draftTransactions DraftTransaction[]
 
   @@map("branches")
 }
@@ -73,8 +86,11 @@ model User {
   lastLogin    DateTime? @map("last_login")
   createdAt    DateTime  @default(now()) @map("created_at")
 
-  tenant       Tenant?   @relation(fields: [tenantId], references: [id])
-  branch       Branch?   @relation(fields: [branchId], references: [id])
+  tenant              Tenant?             @relation(fields: [tenantId], references: [id])
+  branch              Branch?             @relation(fields: [branchId], references: [id])
+  stockTransfers      StockTransfer[]
+  transactionReturns  TransactionReturn[]
+  draftTransactions   DraftTransaction[]
 
   @@map("users")
 }
@@ -110,9 +126,10 @@ model Product {
   imageUrl           String?     @map("image_url")
   createdAt          DateTime    @default(now()) @map("created_at")
 
-  tenant             Tenant      @relation(fields: [tenantId], references: [id])
+  tenant             Tenant            @relation(fields: [tenantId], references: [id])
   inventory          Inventory[]
   transactionDetails TransactionDetail[]
+  stockTransfers     StockTransfer[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, sku])
@@ -135,7 +152,26 @@ model Inventory {
   @@map("inventory")
 }
 
-// 5. TRANSACTIONS (Header)
+// 5. DRAFT TRANSACTIONS (for mobile app)
+model DraftTransaction {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  branchId      String   @map("branch_id")
+  customerPlate String?  @map("customer_plate")
+  totalAmount   Decimal  @map("total_amount") @db.Decimal(15, 2)
+  draftData     String   @map("draft_data") @db.Text // JSON string of items
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  user          User     @relation(fields: [createdBy], references: [id])
+
+  @@map("draft_transactions")
+}
+
+// 6. TRANSACTIONS (Header)
 model TransactionHeader {
   id            String            @id @default(uuid())
   tenantId      String            @map("tenant_id")
@@ -163,9 +199,47 @@ model TransactionDetail {
   mechanicFee   Decimal? @map("mechanic_fee") @db.Decimal(15, 2)
   subtotal      Decimal  @db.Decimal(15, 2)
 
-  transaction   TransactionHeader @relation(fields: [transactionId], references: [id])
-  product       Product           @relation(fields: [productId], references: [id])
-  mechanic      Mechanic?         @relation(fields: [mechanicId], references: [id])
+  transaction   TransactionHeader   @relation(fields: [transactionId], references: [id])
+  product       Product             @relation(fields: [productId], references: [id])
+  mechanic      Mechanic?           @relation(fields: [mechanicId], references: [id])
+  returns       TransactionReturn[]
 
   @@map("transaction_details")
+}
+
+// 7. STOCK TRANSFERS
+model StockTransfer {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  productId      String   @map("product_id")
+  fromBranchId   String   @map("from_branch_id")
+  toBranchId     String   @map("to_branch_id")
+  qty            Int
+  transferredBy  String   @map("transferred_by")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  product        Product  @relation(fields: [productId], references: [id])
+  fromBranch     Branch   @relation("TransfersFrom", fields: [fromBranchId], references: [id])
+  toBranch       Branch   @relation("TransfersTo", fields: [toBranchId], references: [id])
+  user           User     @relation(fields: [transferredBy], references: [id])
+
+  @@map("stock_transfers")
+}
+
+// 8. TRANSACTION RETURNS
+model TransactionReturn {
+  id                  String            @id @default(uuid())
+  transactionDetailId String            @map("transaction_detail_id")
+  qty                 Int
+  reason              ReturnReason
+  notes               String?
+  returnedBy          String            @map("returned_by")
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  transactionDetail   TransactionDetail @relation(fields: [transactionDetailId], references: [id])
+  user                User              @relation(fields: [returnedBy], references: [id])
+
+  @@map("transaction_returns")
 }
